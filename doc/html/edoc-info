@@ -1,0 +1,3 @@
+{application,ora}.
+{packages,[]}.
+{modules,[ora,ora_app]}.

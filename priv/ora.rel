@@ -1,0 +1,9 @@
+%%%
+%%% kernel ver 2.10.10 == Erlang (BEAM) emulator version 5.4.10
+%%%
+
+{release, {"ora","1.0"}, {erts, "5.5"},
+ [{kernel,"2.11"},
+  {stdlib,"1.14"},
+  {ora,   "1.0"}
+ ]}.

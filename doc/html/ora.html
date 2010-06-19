@@ -1,0 +1,147 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<title>Module ora</title>
+<link rel="stylesheet" type="text/css" href="stylesheet.css">
+</head>
+<body bgcolor="white">
+
+<h1>Module ora</h1>
+This module implements client interface to a port program
+        communicating with an Oracle 10g client.
+<ul><li><a href="#description">Description</a></li><li><a href="#types">Data Types</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>
+<p><b>Version:</b> $Rev$
+            $Date$</p>
+<p><b>Behaviours:</b> <a href="gen_server.html"><tt>gen_server</tt></a>.</p>
+<p><b>Authors:</b> Serge Aleynikov (<a href="mailto:serge@hq.idt.net"><tt>serge@hq.idt.net</tt></a>).</p>
+
+<h2><a name="description">Description</a></h2>This module implements client interface to a port program
+        communicating with an Oracle 10g client.
+  
+<h2><a name="types">Data Types</a></h2>
+
+<anchor>date_time</anchor>
+<p><tt>date_time() = {{Y, M, D}, {H, Mi, S}}</tt></p>
+<p>Data type storing date and time value.</p>
+
+<anchor>ora_error</anchor>
+<p><tt>ora_error() = {Class, ErrCode::integer(), Err::string()}</tt></p>
+<p>Class = encode | decode | occi | ora.
+            Error types returned by an Oracle port program.
+  ---------------------------------------------------------------------------</p>
+
+<anchor>timeout</anchor>
+<p><tt>timeout() = infinity | integer()</tt></p>
+<p>Timeout value of a function call.
+            If the value is inteter() it must be &gt; 0.</p>
+
+<h2><a name="index">Function Index</a></h2>
+<table width="100%" border="1"><tr><td valign="top"><a href="#commit-1">commit/1</a></td><td>Commits or rollbacks a transaction.</td></tr>
+<tr><td valign="top"><a href="#connect-2">connect/2</a></td><td>Spawns an erlang control process that will open a port
+       to a c-process that uses the ORACLE OCCI API to open a connection
+       to the database.</td></tr>
+<tr><td valign="top"><a href="#describe_table-2">describe_table/2</a></td><td>Queries the database to find out the datatypes of the Table.</td></tr>
+<tr><td valign="top"><a href="#disconnect-1">disconnect/1</a></td><td>Disconnects from the database and terminates both the erlang
+       control process and the database handling c-process.</td></tr>
+<tr><td valign="top"><a href="#execute_sql-4">execute_sql/4</a></td><td>Executes an SQL query.</td></tr>
+<tr><td valign="top"><a href="#free_sql-2">free_sql/2</a></td><td>Releases resources allocated by QueryID associated with a former
+       call to <code>execute_sql/4</code>.</td></tr>
+<tr><td valign="top"><a href="#rollback-1">rollback/1</a></td><td>Rolls back an open transaction.</td></tr>
+<tr><td valign="top"><a href="#start-0">start/0</a></td><td/></tr>
+<tr><td valign="top"><a href="#start-1">start/1</a></td><td/></tr>
+</table>
+
+<h2><a name="functions">Function Details</a></h2>
+
+<h3><a name="commit-1">commit/1</a></h3>
+<p><tt>commit(ConnectionReference::pid()) -&gt; ok | {error, Reason}</tt></p>
+<p>Commits or rollbacks a transaction. Needed on connections
+       where automatic commit is turned off.
+  <pre>  Erlang -&gt; C -&gt; Erlang port matshaling spec:
+    ( commit ) -&gt; ok | {error, Reason::ora_reason()}</pre></p>
+
+<h3><a name="connect-2">connect/2</a></h3>
+<p><tt>connect(ConnectionStr::string(), Options) -&gt; Result</tt>
+<ul><li><tt>Options = [Option]</tt></li><li><tt>Option = {autocommit, <a href="#type-boolean">boolean()</a>} | {max_rows, integer()} | {query_cache_size, integer()}</tt></li><li><tt>Result = {ok, ConnectionPid::pid()} | {error, Reason::<a href="#type-ora_error">ora_error()</a>}</tt></li></ul></p>
+<p>Spawns an erlang control process that will open a port
+       to a c-process that uses the ORACLE OCCI API to open a connection
+       to the database.  <code>ConnectionStr</code> can contain
+       "user/password@database" connection string.  <code>max_rows</code> option limits
+       the max number of elements in the list of rows returned by a select
+       statement.  <code>query_cache_size</code> controls the size of the driver's cache
+       that stores prepared query statements.  Its default value is 50.
+       The port program can be started with the "-d" flag by
+       specifying {mod, {ora, [{debug, true}]}} option in the ora.app file.
+  <pre>  Erlang -&gt; C -&gt; Erlang port matshaling spec:
+    ( {connect, ConnectionStr, Options} ) -&gt; ok | {error, Reason::ora_error()}
+        ConnectStr = string()
+        Options    = [Option]
+        Option     = {autocommit,       true|false} |
+                     {max_rows,         integer()}  |
+                     {query_cache_size, integer()}</pre></p>
+
+<h3><a name="describe_table-2">describe_table/2</a></h3>
+<p><tt>describe_table(ConnectionReference::pid(), Table::string()) -&gt; {ok, FieldNames} | {error, Reason}</tt>
+<ul><li><tt>Table = string()</tt></li><li><tt>Fields = [{FieldName::string(), Datatype, Size::integer()}]</tt></li><li><tt>Datatype = integer | float | string | date</tt></li><li><tt>Reason = <a href="#type-ora_error">ora_error()</a></tt></li></ul></p>
+<p>Queries the database to find out the datatypes of the Table.
+  <pre>  Erlang -&gt; C -&gt; Erlang port matshaling spec:
+    ( {describe, Table} ) -&gt;
+            {ok, Fields} | {error, Reason}
+ 
+  Note: Rows will be an empty list, because the select statement
+        for the describe_table command will not return any data records.</pre></p>
+
+<h3><a name="disconnect-1">disconnect/1</a></h3>
+<p><tt>disconnect(ConnectionReferense::pid()) -&gt; ok | {error, Reason}</tt></p>
+<p>Disconnects from the database and terminates both the erlang
+       control process and the database handling c-process.
+  <pre>  Erlang -&gt; C -&gt; Erlang port matshaling spec:
+    ( disconnect ) -&gt; ok | {error, Reason::ora_reason()}</pre></p>
+
+<h3><a name="execute_sql-4">execute_sql/4</a></h3>
+<p><tt>execute_sql(ConnectionReference::pid(), QueryID, Query, BindVars) -&gt; Result</tt>
+<ul><li><tt>QueryID = atom()</tt></li><li><tt>Query = string() | binary()</tt></li><li><tt>BindVars = [BindVar]</tt></li><li><tt>BindVar = integer() | float() | string() | <a href="#type-date_time">date_time()</a></tt></li><li><tt>Result = {ok, FieldNames, Rows, Continue} | {ok, NRows::integer()} | {error, Reason::<a href="#type-ora_error">ora_error()</a>}</tt></li><li><tt>Continue = eof | continue</tt></li><li><tt>FieldNames = [FieldName::string()] | []</tt></li><li><tt>Rows = [Row::tuple()]</tt></li></ul></p>
+<p>Executes an SQL query. If it is a SELECT query the
+       result set is returned (up to N defined by the {max_rows, N} connect
+       option, in which case select_next/2 can be used to fetch next N records),
+       otherwise the number of affected rows is returned.
+       The Query should be an SQL string. QueryID is an atom that causes the
+       driver to cache the prepared SQL statement associated with QueryID.
+       That internal cache size is controlled by the session's <code>query_cache_size</code>
+       parameter.  When <code>execute_sql</code> is used to fetch large datasets that
+       return more than <code>max_rows</code> records, <code>{ok, _, _, continue}</code> tuple is returned
+       indicating that there is more data in the cursor, otherwise <code>{ok, _, _, eof}</code>
+       is returned.  In the former case the next record list can be fetched using
+       the same <code>execute_sql</code> function call as the driver remembers the state
+       of the open cursor associated with the QueryID.  Also successive calls
+       of this function will return an empty list of FieldNames, since the field names
+       can be obtained from the first call of the function.
+  <pre>  Erlang -&gt; C -&gt; Erlang port matshaling spec:
+  ( {execute_sql, QueryID, Query, BindVars} ) -&gt;
+          {ok, FieldNames, Rows, eof}      |   % For a select query with resultset &lt; max_rows
+          {ok, FieldNames, Rows, continue} |   % For a select query with remaining records in a cursor
+          {ok, NRows::integer()}           |   % For insert, update, delete query
+          {ok, OutParams::list()}          |   % For plsql block
+          {error, Reason}</pre></p>
+
+<h3><a name="free_sql-2">free_sql/2</a></h3>
+<p><tt>free_sql(ConnectionReference::pid(), QueryID::atom()) -&gt; ok</tt></p>
+<p>Releases resources allocated by QueryID associated with a former
+       call to <code>execute_sql/4</code>.</p>
+
+<h3><a name="rollback-1">rollback/1</a></h3>
+<p><tt>rollback(ConnectionReference::pid()) -&gt; ok | {error, Reason}</tt></p>
+<p>Rolls back an open transaction.
+  <pre>  Erlang -&gt; C -&gt; Erlang port matshaling spec:
+    ( rollback ) -&gt; ok | {error, Reason::ora_reason()}</pre></p>
+<p><b>See also:</b> <a href="#commit-3">commit/3</a>.</p>
+
+<h3><a name="start-0">start/0</a></h3>
+<tt>start() -&gt; term()
+</tt>
+
+<h3><a name="start-1">start/1</a></h3>
+<tt>start(Args) -&gt; term()
+</tt>
+</body>
+</html>
